@@ -1,0 +1,211 @@
+<!doctype html>
+<html>
+<head>
+<title>Falcon - test app</title>
+<link href='http://fonts.googleapis.com/css?family=Fira+Sans:300,400,700,400italic' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" type="text/css" href="styles/app.css">
+</head>
+<body ng-app="test">
+
+<h1>Falcon test app</h1>
+
+<div role="main" ng-controller="FalconTestCtrl">
+
+	<ul class="tabs">
+		<li><a ng-click="activeTab='publishing'" 
+				ng-class="{selected:activeTab==='publishing'}">Publishing</a></li>
+		<li><a ng-click="activeTab='reach-data'" 
+				ng-class="{selected:activeTab==='reach-data'}">Reach Data</a></li>
+	</ul>
+
+	<section class="publishing" ng-show="activeTab==='publishing'" ng-cloak>
+		
+		<div class="wrapper" ng-repeat="(pubKey,pub) in publishing.response">
+
+			<a class="bt edit" ng-click="PubEdit(pubKey)">edit item</a>
+			<a class="bt del" ng-click="PubDel(pubKey)">delete item</a>
+				
+			<div class="main-data">
+				<figure ng-if="pub.content.postType==='photo'">
+					<img ng-src="{{pub.content.media.url}}">
+					<legend>{{pub.content.media.fileName}}</legend>
+				</figure>
+				<a class="link" ng-href="{{pub.content.media.url}}" target="_blank" 
+						ng-if="pub.content.postType==='link'">
+					Follow link<br>
+					({{pub.content.media.url.length>30?
+						pub.content.media.url.substr(0,30)+'...':pub.content.media.url}})
+				</a>
+
+				<h5>Message: <strong>{{pub.content.message}}</strong></h5>
+				<em>via {{pub.content.network}}</em>
+				
+			</div>
+
+			<h6>Tags</h6>
+			<ul class="tags">
+				<li ng-repeat="tag in pub.tags">{{tag}}</li>
+			</ul>
+
+			<h6>Channels</h6>
+			<ul class="channels">
+				<li ng-repeat="ch in pub.channels">
+					{{ch.name}}
+				</li>
+			</ul>
+
+			<time class="date" datetime="{{pub.scheduled}}">
+				<small>Scheduled to: </small>
+				{{pub.scheduled | date}}
+				<small>{{pub.scheduled | date:'hh:mm'}}</small>
+			</time>
+			<div class="status {{pub.status}}">
+				&nbsp;
+				<span ng-show="pub.status">
+					Status: <strong>{{pub.status}}</strong>
+				</span>
+			</div>
+
+			<div class="geo-data">
+				<div class="column" ng-show="pub.geo.countries.length">
+					<h6>Countries</h6>
+					<ul class="countries">
+						<li ng-repeat="co in pub.geo.countries">{{co.value}}</li>
+					</ul>
+				</div>
+				<div class="column" ng-show="pub.geo.languages.length">	
+					<h6>Languages</h6>
+					<ul class="languages">
+						<li ng-repeat="la in pub.geo.languages">{{la.value}}</li>
+					</ul>
+				</div>
+				<div class="column" ng-show="pub.geo.cities.length">	
+					<h6>Cities</h6>
+					<ul class="cities">
+						<li ng-repeat="ci in pub.geo.cities">{{ci.value}}</li>
+					</ul>
+				</div>
+				<div class="column" ng-show="pub.geo.regions.length">	
+					<h6>Regions</h6>
+					<ul class="regions">
+						<li ng-repeat="re in pub.geo.regions">{{re.value}}</li>
+					</ul>
+				</div>
+			</div>
+
+		</div>
+
+		<a class="bt plus" ng-click="PubNew()">New publishing item</a>
+
+		<div class="overlay" ng-show="pubForm||pubForm===0" data-closable-pop-up>
+
+			<form class="new-pub" ng-submit="PubFormSubmit()">
+
+				<h3>{{pubForm==='new'?'New':'Edit'}} item</h3>
+
+				<a class="close" title="close" ng-click="pubForm=false">&times;</a>
+
+				<textarea ng-model="pubData.content.message" placeholder="Message">
+				</textarea>
+				<select ng-model="pubData.content.network">
+					<option value="">Select network...</option>
+					<option value="facebook">Nerwork: facebook</option>
+					<option value="twitter">Nerwork: twitter</option>
+				</select>
+				<select ng-model="pubData.content.postType">
+					<option value="">Select post type...</option>
+					<option value="photo">Post: photo</option>
+					<option value="link">Post: link</option>
+				</select>
+				<input type="url" ng-model="pubData.content.media.url" placeholder="URL">
+				<input type="text" disabled placeholder="No tags" class="collective"
+						ng-show="!pubData.tags.length">
+				<input type="text" class="collective" ng-repeat="(k,t) in pubData.tags track by $index" 
+						ng-model="pubData.tags[k]" placeholder="tag">
+				<a class="add" ng-click="pubData.tags.push('')">+ new tag</a>
+				<select ng-model="pubData.status">
+					<option value="">Select status...</option>
+					<option value="draft">Status: draft</option>
+					<option value="finished">Status: finished</option>
+				</select>
+				<select ng-repeat="(k,v) in pubData.channels track by $index" 
+						ng-model="pubData.channels[k].id" class="collective">
+					<option value="0">Select channel...</option>
+					<option value="{{ch.id}}" ng-repeat="ch in channels">Channel: {{ch.name}}</option>
+				</select>
+				<input type="text" disabled placeholder="No channels" class="collective"
+						ng-show="!pubData.channels.length">
+				<a class="add" ng-click="pubData.channels.push({id:0})">+ new channel</a>
+				<!-- input type="datetime" ng-model="pubData.scheduled" placeholder="scheduled date" -->
+				<select ng-repeat="(k,v) in pubData.geo.countries track by $index" 
+						ng-model="v.key" class="collective">
+					<option value="0">Select country...</option>
+					<option value="{{c.key}}" ng-repeat="c in countries">Countries: {{c.value}}</option>
+				</select>
+				<input type="text" disabled placeholder="No countries" class="collective"
+						ng-show="!pubData.geo.countries.length">
+				<a class="add" ng-click="pubData.geo.countries.push({key:0})">+ new country</a>
+				<select ng-repeat="(k,v) in pubData.geo.languages track by $index" 
+						ng-model="v.key" class="collective">
+					<option value="0">Select language...</option>
+					<option value="{{l.key}}" ng-repeat="l in languages">Language: {{l.value}}</option>
+				</select>
+				<input type="text" disabled placeholder="No languages" class="collective"
+						ng-show="!pubData.geo.languages.length">
+				<a class="add" ng-click="pubData.geo.languages.push({key:0})">+ new language</a>
+				<select ng-repeat="(k,v) in pubData.geo.cities track by $index" 
+						ng-model="v.key" class="collective">
+					<option value="0">Select city...</option>
+					<option value="{{c.key}}" ng-repeat="c in cities">City: {{c.value}}</option>
+				</select>
+				<input type="text" disabled placeholder="No cities" class="collective"
+						ng-show="!pubData.geo.cities.length">
+				<a class="add" ng-click="pubData.geo.cities.push({key:0})">+ new city</a>
+				<select ng-repeat="(k,v) in pubData.geo.regions track by $index" 
+						ng-model="v.key" class="collective">
+					<option value="0">Select region...</option>
+					<option value="{{r.key}}" ng-repeat="r in regions">Region: {{r.value}}</option>
+				</select>
+				<input type="text" disabled placeholder="No regions" class="collective"
+						ng-show="!pubData.geo.regions.length">
+				<a class="add" ng-click="pubData.geo.regions.push({key:0})">+ new region</a>
+
+				<button>Send</button>
+			</form>
+
+		</div>
+
+	</section>
+	<section class="reach-data" ng-show="activeTab==='reach-data'" ng-cloak>
+		
+		<div class="graph"></div>
+
+		<form ng-submit="ReachDataAdd()" class="form-rd">
+
+			<h5>Insert new data on the graph</h5>
+
+			<input type="number" placeholder="Post Impressions" required
+					ng-model="newReachData.post_impressions">
+			<input type="number" placeholder="Organic Impressions" required
+					ng-model="newReachData.post_impressions_organic">
+			<input type="number" placeholder="Viral Impressions" required
+					ng-model="newReachData.post_impressions_viral">
+			<input type="number" placeholder="Paid Impressions" required
+					ng-model="newReachData.post_impressions_paid">
+
+			<button>Send</button>
+
+		</form>
+
+	</section>
+
+</div>
+
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+	
+<script src="https://cdn.socket.io/socket.io-1.3.4.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+<script src="test.js"></script>
+
+</body>
+</html>
